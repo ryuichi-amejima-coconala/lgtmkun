@@ -1,7 +1,7 @@
 const { App, AwsLambdaReceiver } = require('@slack/bolt')
 
 const aistudioReviewer = [
-  'U06LJG34X7V', // jima
+  'U04AKQ3962G', // jima
   'U087G18N284', // しのたつさん
   'U082X9USNCU', // ごろーさん
   'UN9S3A0VD', // おかぴさん
