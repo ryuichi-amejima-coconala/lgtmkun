@@ -32,7 +32,7 @@ app.message('レビュー', async ({ message, say }) => {
 		reviewers.splice(firstReviewer, 1)
 		const secondReviewer = await selectReviewer(reviewers)
 
-		await say({ text: `レビューお願いします。 レビュアー: <@${firstReviewer}>, <@${secondReviewer}>!`, thread_ts: message.ts });
+		await say({ text: `レビューお願いします。 レビュアー: <@${firstReviewer}>, <@${secondReviewer}>`, thread_ts: message.ts });
 	} catch (err) {
 		await say({text: `エラーが発生しました。: ${err}`, thread_ts: message.ts})
 	}
