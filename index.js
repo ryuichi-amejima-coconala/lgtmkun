@@ -1,12 +1,12 @@
 const { App, AwsLambdaReceiver } = require('@slack/bolt')
 
 const aistudioReviewer = [
-  'U04AKQ3962G', // jima
-  'U087G18N284', // しのたつさん
-  'U082X9USNCU', // ごろーさん
-  'UN9S3A0VD', // おかぴさん
-  'U08K4F0JADS', // はじめちゃん
-  'U08LAC91Z6K', // やぎさん
+  { id: 'U04AKQ3962G', weight: 1 }, // jima
+  { id: 'U087G18N284', weight: 1 }, // しのたつさん
+  { id: 'U082X9USNCU', weight: 1 }, // ごろーさん
+  { id: 'UN9S3A0VD', weight: 0.5 }, // おかぴさん
+  { id: 'U08K4F0JADS', weight: 1 }, // はじめちゃん
+  { id: 'U08LAC91Z6K', weight: 1 }, // やぎさん
 ]
 
 const awsLambdaReceiver = new AwsLambdaReceiver({
@@ -27,15 +27,24 @@ app.message('レビュー', async ({ message, say }) => {
     if (!(currentHour > 6 && currentHour < 19)) return
 
     let reviewers = aistudioReviewer.concat()
-    let messageUser = reviewers.indexOf(message.user)
-    reviewers.splice(messageUser, 1)
+    let messageUserIndex = reviewers.findIndex(
+      (reviewer) => reviewer.id === message.user
+    )
+    if (messageUserIndex !== -1) {
+      reviewers.splice(messageUserIndex, 1)
+    }
     const firstReviewer = await selectReviewer(reviewers)
 
-    reviewers.splice(firstReviewer, 1)
+    const firstReviewerIndex = reviewers.findIndex(
+      (reviewer) => reviewer.id === firstReviewer
+    )
+    if (firstReviewerIndex !== -1) {
+      reviewers.splice(firstReviewerIndex, 1)
+    }
     const secondReviewer = await selectReviewer(reviewers)
 
     await say({
-      text: `レビューお願いします。 レビュアー: <@${firstReviewer}>, <@${secondReviewer}>!`,
+      text: `レビューお願いします。 レビュアー: <@${firstReviewer}>, <@${secondReviewer}>`,
       thread_ts: message.ts,
     })
   } catch (err) {
@@ -46,25 +55,50 @@ app.message('レビュー', async ({ message, say }) => {
   }
 })
 
-async function isActive(selectReviewer) {
+async function isActive(reviewerId) {
   let result = await app.client.users.getPresence({
-    user: selectReviewer,
+    user: reviewerId,
   })
   return result.presence == 'active'
 }
 
 async function selectReviewer(selectReviewers) {
   let reviewer = 'undefined'
-  let count = selectReviewers.length
-  for (let i = 0; i < count; i++) {
-    let num = Math.floor(Math.random() * selectReviewers.length)
-    let tmpReviewer = selectReviewers[num]
-    selectReviewers.splice(num, 1)
-    if (await isActive(tmpReviewer)) {
-      reviewer = tmpReviewer
-      break
+  // reviewers配列の各要素のweightを合計
+  const totalWeight = selectReviewers.reduce(
+    (sum, reviewer) => sum + reviewer.weight,
+    0
+  )
+
+  // reviewersのコピーを作成（元の配列を変更しないため）
+  const reviewersCopy = [...selectReviewers]
+
+  // すべてのレビュアーを試す
+  for (let i = 0; i < reviewersCopy.length; i++) {
+    // 0～totalWeightの間のランダムな値を生成
+    const randomValue = Math.random() * totalWeight
+
+    // 重みに基づいて累積値を計算し、ランダム値と比較
+    let cumulativeWeight = 0
+    for (let j = 0; j < reviewersCopy.length; j++) {
+      cumulativeWeight += reviewersCopy[j].weight
+      if (randomValue <= cumulativeWeight) {
+        const selectedReviewer = reviewersCopy[j]
+        // 選択されたレビュアーを配列から削除
+        reviewersCopy.splice(j, 1)
+
+        // アクティブなら選択、そうでなければ次のループへ
+        if (await isActive(selectedReviewer.id)) {
+          reviewer = selectedReviewer.id
+          break
+        }
+        break
+      }
     }
+
+    if (reviewer !== 'undefined') break
   }
+
   return reviewer
 }
 
