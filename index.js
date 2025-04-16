@@ -20,6 +20,8 @@ const app = new App({
 
 app.message('レビュー', async ({ message, say }) => {
   try {
+    if (message.text.indexOf('https://github.com/') == -1) return
+
     let currentHour = new Date(
       Date.now() + (new Date().getTimezoneOffset() + 9 * 60) * 60 * 1000
     ).getHours()
