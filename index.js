@@ -89,11 +89,7 @@ async function selectReviewer(selectReviewers) {
         // 選択されたレビュアーを配列から削除
         reviewersCopy.splice(j, 1)
 
-        // アクティブなら選択、そうでなければ次のループへ
-        if (await isActive(selectedReviewer.id)) {
-          reviewer = selectedReviewer.id
-          break
-        }
+        reviewer = selectedReviewer.id
         break
       }
     }
