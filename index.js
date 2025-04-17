@@ -57,13 +57,6 @@ app.message('レビュー', async ({ message, say }) => {
   }
 })
 
-async function isActive(reviewerId) {
-  let result = await app.client.users.getPresence({
-    user: reviewerId,
-  })
-  return result.presence == 'active'
-}
-
 async function selectReviewer(selectReviewers) {
   let reviewer = 'undefined'
   // reviewers配列の各要素のweightを合計
